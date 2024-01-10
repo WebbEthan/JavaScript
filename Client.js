@@ -23,9 +23,9 @@ function Client()
             console.log("Attempting to connect to> " + ip + ":" + port);
             const socket = new WebSocket("ws://" + ip + ":" + port);
             // waits for socket to connect
-            if (await new Promise((Connected) => { let timeout = setInterval(() => {
-                    if (socket.readyState == 1) { Connected(true); }
-                     else if (socket.readyState != 0) { Connected(false); } }, 1000); }))
+            if (await new Promise((Connected) => { const timeout = setInterval(() => { console.log("testing");
+                    if (socket.readyState == 1) { clearInterval(timeout); Connected(true); }
+                     else if (socket.readyState != 0) { clearInterval(timeout); Connected(false); } }, 1000); }))
             {
                 console.log("Connection established...");   
             }
