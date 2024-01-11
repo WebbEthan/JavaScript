@@ -1,9 +1,11 @@
 function Client()
 {
     // Method to start connection with server
-    Connect = function(ip, port)
+    Connect = async function(ip, port)
     {
-        _tcp = new TCP(ip, port);
+        _tcp = new TCP();
+        await _tcp.Connect(ip, port);
+        return;
     };
     // Passes a packet to the tcp of udp class
     SendData = function(packet, useUDP)
@@ -39,22 +41,18 @@ function Client()
     class TCP
     {
         #_socket;
-        constructor(ip, port)
-        {
-            this.#_connect(ip, port).then(socket => this.#_socket = socket);
-        }
         // method starts the connection to the server and return the socket
-        async #_connect(ip, port)
+        async Connect(ip, port)
         {
             console.log("Attempting to connect to> " + ip + ":" + port);
-            const socket = new WebSocket("ws://" + ip + ":" + port);
+            this.#_socket = new WebSocket("ws://" + ip + ":" + port);
             // waits for socket to connect
             if (await new Promise((Connected) => { const timeout = setInterval(() => {
-                    if (socket.readyState == 1) { clearInterval(timeout); Connected(true); }
-                    else if (socket.readyState != 0) { clearInterval(timeout); Connected(false); } }, 500); }))
+                    if (this.#_socket.readyState != 0) { clearInterval(timeout); Connected(this.#_socket.readyState == 1); }}, 500); }))
             {
                 // Connection found
-                console.log("Connection established...");   
+                console.log("Connection established..."); 
+                this.#_socket.onmessage = this.HandleData(this.#_socket.data);
             }
             else
             {
@@ -62,10 +60,9 @@ function Client()
                 console.log("Connection failed");
                 Disconnect();
             }
-            return socket;
         }
         // takes a byte array and passes it into the handle 
-        HandleData(data)
+        HandleData = function(data)
         {
             const packet = new Packet(data);
             Handles[packet.PacketID]();
@@ -76,8 +73,11 @@ function Client()
         }
         Disconnect()
         {
-            this.#_socket.close();
-            console.log("Disconnected TCP");
+            if (this.#_socket != null)
+            {
+                this.#_socket.close();
+                console.log("Disconnected TCP");
+            }
         }
 
     }
@@ -96,5 +96,4 @@ function Client()
 
         }
     }
-    return;
 };
